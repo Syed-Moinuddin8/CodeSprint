@@ -65,7 +65,7 @@ router.post("/registrations", async (req, res): Promise<void> => {
       .returning();
     res.status(201).json(serializeReg(reg!));
   } catch (err: any) {
-    if (err?.code === "23505" || err?.code === "SQLITE_CONSTRAINT" || err?.code === "SQLITE_CONSTRAINT_UNIQUE") {
+    if (err?.code === "23505") {
       res.status(409).json({ error: "Email already registered. Please use a different email address." });
       return;
     }
