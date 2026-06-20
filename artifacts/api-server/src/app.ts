@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
-import pinoHttp from "pino-http";
+import pinoHttp, { type HttpLogger } from "pino-http";
+const httpLogger: HttpLogger = (pinoHttp as any).default ?? pinoHttp;
 import cookieParser from "cookie-parser";
 import session from "express-session";
 import router from "./routes";
@@ -14,17 +15,17 @@ const __dirname = path.dirname(__filename);
 const app: Express = express();
 
 app.use(
-  pinoHttp({
+  httpLogger({
     logger,
     serializers: {
-      req(req) {
+      req(req: { id: string; method: string; url: string }) {
         return {
           id: req.id,
           method: req.method,
           url: req.url?.split("?")[0],
         };
       },
-      res(res) {
+      res(res: { statusCode: number }) {
         return {
           statusCode: res.statusCode,
         };
