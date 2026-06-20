@@ -5,7 +5,7 @@ import { count, sql } from "drizzle-orm";
 
 const router = Router();
 
-router.get("/stats", async (req, res): Promise<void> => {
+router.get("/stats", async (_req, res): Promise<void> => {
   try {
     const [totalRow] = await db.select({ count: count() }).from(registrationsTable);
     const participants = Number(totalRow?.count ?? 0);
@@ -22,7 +22,7 @@ router.get("/stats", async (req, res): Promise<void> => {
       judges: 12,
     });
   } catch (err) {
-    req.log.error({ err }, "Failed to get stats");
+    console.error("Failed to get stats", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

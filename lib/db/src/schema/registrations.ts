@@ -11,7 +11,7 @@ export const registrationsTable = pgTable("registrations", {
   teamName: text("team_name").notNull(),
   teamSize: integer("team_size").notNull(),
   teamMembers: text("team_members"),
-  transactionId: text("transaction_id").notNull(),
+  paymentReceiptPath: text("payment_receipt_path"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

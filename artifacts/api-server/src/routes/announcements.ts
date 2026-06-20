@@ -12,9 +12,9 @@ router.get("/announcements", async (req, res): Promise<void> => {
       .select()
       .from(announcementsTable)
       .orderBy(announcementsTable.createdAt);
-    res.json(announcements.map((a) => ({ ...a, createdAt: a.createdAt.toISOString() })));
+    res.json(announcements.map((a) => ({ ...a, createdAt: String(a.createdAt) })));
   } catch (err) {
-    req.log.error({ err }, "Failed to list announcements");
+    console.error("Failed to list announcements", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -34,9 +34,9 @@ router.post("/announcements", async (req, res): Promise<void> => {
       .insert(announcementsTable)
       .values(parsed.data)
       .returning();
-    res.status(201).json({ ...announcement, createdAt: announcement!.createdAt.toISOString() });
+    res.status(201).json({ ...announcement, createdAt: String(announcement!.createdAt) });
   } catch (err) {
-    req.log.error({ err }, "Failed to create announcement");
+    console.error("Failed to create announcement", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -66,9 +66,9 @@ router.patch("/announcements/:id", async (req, res): Promise<void> => {
       res.status(404).json({ error: "Not found" });
       return;
     }
-    res.json({ ...updated, createdAt: updated.createdAt.toISOString() });
+    res.json({ ...updated, createdAt: String(updated.createdAt) });
   } catch (err) {
-    req.log.error({ err }, "Failed to update announcement");
+    console.error("Failed to update announcement", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -94,7 +94,7 @@ router.delete("/announcements/:id", async (req, res): Promise<void> => {
     }
     res.status(204).send();
   } catch (err) {
-    req.log.error({ err }, "Failed to delete announcement");
+    console.error("Failed to delete announcement", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

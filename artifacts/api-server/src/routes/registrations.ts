@@ -7,10 +7,7 @@ import { CreateRegistrationBody, DeleteRegistrationParams } from "@workspace/api
 const router = Router();
 
 function serializeReg(r: typeof registrationsTable.$inferSelect) {
-  return { 
-    ...r, 
-    createdAt: typeof r.createdAt === 'string' ? r.createdAt : r.createdAt.toISOString() 
-  };
+  return { ...r, createdAt: String(r.createdAt) };
 }
 
 router.get("/registrations", async (req, res): Promise<void> => {
@@ -42,7 +39,7 @@ router.get("/registrations", async (req, res): Promise<void> => {
     }
     res.json(rows.map(serializeReg));
   } catch (err) {
-    req.log.error({ err }, "Failed to list registrations");
+    console.error("Failed to list registrations", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -52,7 +49,7 @@ router.post("/registrations", async (req, res): Promise<void> => {
     ...req.body,
     teamSize: Number(req.body.teamSize),
   };
-  
+
   const parsed = CreateRegistrationBody.safeParse(body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input", details: parsed.error.issues });
@@ -69,7 +66,7 @@ router.post("/registrations", async (req, res): Promise<void> => {
       res.status(409).json({ error: "Email already registered. Please use a different email address." });
       return;
     }
-    req.log.error({ err }, "Failed to create registration");
+    console.error("Failed to create registration", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -85,7 +82,7 @@ router.get("/registrations/export", async (req, res): Promise<void> => {
       .from(registrationsTable)
       .orderBy(desc(registrationsTable.createdAt));
 
-    const headers = ["ID", "Full Name", "Email", "Phone", "College/Org", "Team Name", "Team Size", "Team Members", "Transaction ID", "Registered At"];
+    const headers = ["ID", "Full Name", "Email", "Phone", "College/Org", "Team Name", "Team Size", "Team Members", "Payment Receipt", "Registered At"];
     const csvRows = [
       headers.join(","),
       ...rows.map((r) =>
@@ -98,8 +95,8 @@ router.get("/registrations/export", async (req, res): Promise<void> => {
           `"${r.teamName.replace(/"/g, '""')}"`,
           r.teamSize,
           `"${(r.teamMembers ?? "").replace(/"/g, '""')}"`,
-          `"${r.transactionId.replace(/"/g, '""')}"`,
-          typeof r.createdAt === 'string' ? r.createdAt : r.createdAt.toISOString(),
+          `"${(r.paymentReceiptPath ?? "").replace(/"/g, '""')}"`,
+          String(r.createdAt),
         ].join(","),
       ),
     ];
@@ -108,7 +105,7 @@ router.get("/registrations/export", async (req, res): Promise<void> => {
     res.setHeader("Content-Disposition", "attachment; filename=registrations.csv");
     res.send(csvRows.join("\n"));
   } catch (err) {
-    req.log.error({ err }, "Failed to export registrations");
+    console.error("Failed to export registrations", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -134,7 +131,7 @@ router.delete("/registrations/:id", async (req, res): Promise<void> => {
     }
     res.status(204).send();
   } catch (err) {
-    req.log.error({ err }, "Failed to delete registration");
+    console.error("Failed to delete registration", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

@@ -34,7 +34,7 @@ router.post("/admin/login", async (req, res): Promise<void> => {
 
     res.json({ username, authenticated: true });
   } catch (err) {
-    req.log.error({ err }, "Admin login failed");
+    console.error("Admin login failed", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -88,11 +88,11 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
       individualParticipants,
       recentRegistrations: recentRegistrations.map((r) => ({
         ...r,
-        createdAt: typeof r.createdAt === 'string' ? r.createdAt : r.createdAt.toISOString(),
+        createdAt: String(r.createdAt),
       })),
     });
   } catch (err) {
-    req.log.error({ err }, "Failed to get admin stats");
+    console.error("Failed to get admin stats", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
