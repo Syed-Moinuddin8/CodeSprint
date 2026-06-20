@@ -10,8 +10,6 @@ import Rules from "@/pages/Rules";
 import Prizes from "@/pages/Prizes";
 import FAQ from "@/pages/FAQ";
 import Contact from "@/pages/Contact";
-import AdminLogin from "@/pages/AdminLogin";
-import AdminDashboard from "@/pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -25,8 +23,6 @@ function Router() {
       <Route path="/prizes" component={Prizes} />
       <Route path="/faq" component={FAQ} />
       <Route path="/contact" component={Contact} />
-      <Route path="/admin" component={AdminLogin} />
-      <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -24,10 +24,8 @@ export default function RegistrationForm({ open, onOpenChange }: RegistrationFor
     member3: "",
     member4: "",
     college: "",
-    paymentReceipt: null as File | null,
+    transactionId: "",
   });
-
-  const [receiptFileName, setReceiptFileName] = useState<string>("");
   const [qrImageKey, setQrImageKey] = useState(Date.now());
   const [showSuccessPage, setShowSuccessPage] = useState(false);
   const [registrationData, setRegistrationData] = useState<any>(null);
@@ -35,48 +33,50 @@ export default function RegistrationForm({ open, onOpenChange }: RegistrationFor
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate payment receipt
-    if (!formData.paymentReceipt) {
-      alert("Please upload payment receipt before submitting!");
+    // Validate transaction ID
+    if (!formData.transactionId.trim()) {
+      alert("Please enter your UPI transaction ID!");
       return;
     }
 
     try {
-      // Prepare form data for API submission with file upload
-      const apiFormData = new FormData();
-      apiFormData.append("fullName", formData.teamLeaderName);
-      apiFormData.append("email", formData.email);
-      apiFormData.append("phone", formData.phone);
-      apiFormData.append("college", formData.college);
-      apiFormData.append("teamName", formData.teamName);
-      apiFormData.append("teamSize", formData.teamSize);
-      
       // Combine team members
       const members = [
         formData.member2,
         formData.member3,
         formData.member4
       ].filter(m => m.trim()).join(", ");
-      apiFormData.append("teamMembers", members);
-      
-      apiFormData.append("paymentReceipt", formData.paymentReceipt);
 
-      // Submit to API
-      const response = await fetch("/api/registrations", {
+      // Google Apps Script URL (from environment variable or fallback)
+      const SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL || "/api/google-sheets";
+
+      console.log("Submitting to:", SCRIPT_URL);
+
+      // Submit to Google Sheets via Apps Script
+      // Use no-cors mode for Google Apps Script
+      const response = await fetch(SCRIPT_URL, {
         method: "POST",
-        body: apiFormData,
+        mode: "no-cors", // Required for Google Apps Script
+        headers: {
+          "Content-Type": "text/plain", // Use text/plain to avoid preflight
+        },
+        body: JSON.stringify({
+          fullName: formData.teamLeaderName,
+          email: formData.email,
+          phone: formData.phone,
+          college: formData.college,
+          teamName: formData.teamName,
+          teamSize: parseInt(formData.teamSize),
+          teamMembers: members || "",
+          transactionId: formData.transactionId,
+        }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Registration failed");
-      }
-
-      const data = await response.json();
+      // With no-cors, we can't read the response, so assume success if no error
+      console.log("Registration submitted successfully");
 
       // Store registration data and show success page
       setRegistrationData({
-        id: data.id,
         teamName: formData.teamName,
         teamLeaderName: formData.teamLeaderName,
         phone: formData.phone,
@@ -114,9 +114,8 @@ export default function RegistrationForm({ open, onOpenChange }: RegistrationFor
       member3: "",
       member4: "",
       college: "",
-      paymentReceipt: null,
+      transactionId: "",
     });
-    setReceiptFileName("");
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -124,30 +123,6 @@ export default function RegistrationForm({ open, onOpenChange }: RegistrationFor
       ...formData,
       [e.target.name]: e.target.value,
     });
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type (images only)
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
-      if (!validTypes.includes(file.type)) {
-        alert('Please upload a valid image file (JPG, PNG, GIF) or PDF');
-        return;
-      }
-      
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB');
-        return;
-      }
-
-      setFormData({
-        ...formData,
-        paymentReceipt: file,
-      });
-      setReceiptFileName(file.name);
-    }
   };
 
   return (
@@ -418,32 +393,19 @@ export default function RegistrationForm({ open, onOpenChange }: RegistrationFor
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Upload Payment Receipt *</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-orange-400 transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    onChange={handleFileChange}
-                    required
-                    className="hidden"
-                    id="receipt-upload"
-                  />
-                  <label
-                    htmlFor="receipt-upload"
-                    className="cursor-pointer flex flex-col items-center"
-                  >
-                    <div className="text-4xl mb-2">📎</div>
-                    <p className="text-sm font-medium text-gray-700">
-                      {receiptFileName || "Click to upload receipt"}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      JPG, PNG, GIF or PDF (Max 5MB)
-                    </p>
-                  </label>
-                </div>
-                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded">
-                  <p className="text-xs text-red-800 font-medium">
-                    📌 Important: Receipt must contain the Transaction ID clearly visible
+                <label className="block text-sm font-medium mb-2">UPI Transaction ID *</label>
+                <input
+                  type="text"
+                  name="transactionId"
+                  value={formData.transactionId}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="Enter your UPI transaction ID"
+                />
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+                  <p className="text-xs text-blue-800 font-medium">
+                    💡 Find your Transaction ID in your UPI app (GPay, PhonePe, Paytm) under transaction history
                   </p>
                 </div>
               </div>

@@ -3,44 +3,8 @@ import { db } from "@workspace/db";
 import { registrationsTable } from "@workspace/db";
 import { eq, ilike, or, desc } from "drizzle-orm";
 import { CreateRegistrationBody, DeleteRegistrationParams } from "@workspace/api-zod";
-import multer from "multer";
-import path from "path";
-import { fileURLToPath } from "url";
 
 const router = Router();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Uploads directory - get from environment or use project root path
-const projectRoot = process.env.PROJECT_ROOT || path.resolve(process.cwd(), "../..");
-const uploadsDir = path.join(projectRoot, "uploads");
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, "receipt-" + uniqueSuffix + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|pdf/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image and PDF files are allowed"));
-    }
-  },
-});
 
 function serializeReg(r: typeof registrationsTable.$inferSelect) {
   return { 
@@ -83,11 +47,10 @@ router.get("/registrations", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/registrations", upload.single("paymentReceipt"), async (req, res): Promise<void> => {
+router.post("/registrations", async (req, res): Promise<void> => {
   const body = {
     ...req.body,
     teamSize: Number(req.body.teamSize),
-    paymentReceiptPath: req.file ? `/uploads/${req.file.filename}` : undefined,
   };
   
   const parsed = CreateRegistrationBody.safeParse(body);
@@ -122,7 +85,7 @@ router.get("/registrations/export", async (req, res): Promise<void> => {
       .from(registrationsTable)
       .orderBy(desc(registrationsTable.createdAt));
 
-    const headers = ["ID", "Full Name", "Email", "Phone", "College/Org", "Team Name", "Team Size", "Team Members", "Registered At"];
+    const headers = ["ID", "Full Name", "Email", "Phone", "College/Org", "Team Name", "Team Size", "Team Members", "Transaction ID", "Registered At"];
     const csvRows = [
       headers.join(","),
       ...rows.map((r) =>
@@ -135,6 +98,7 @@ router.get("/registrations/export", async (req, res): Promise<void> => {
           `"${r.teamName.replace(/"/g, '""')}"`,
           r.teamSize,
           `"${(r.teamMembers ?? "").replace(/"/g, '""')}"`,
+          `"${r.transactionId.replace(/"/g, '""')}"`,
           typeof r.createdAt === 'string' ? r.createdAt : r.createdAt.toISOString(),
         ].join(","),
       ),
