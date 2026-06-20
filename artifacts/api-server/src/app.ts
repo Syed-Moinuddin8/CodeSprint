@@ -1,7 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
-import * as pinoHttpModule from "pino-http";
-const pinoHttp = (pinoHttpModule as any).default ?? pinoHttpModule;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pinoHttp = require("pino-http");
 import cookieParser from "cookie-parser";
 import session from "express-session";
 import router from "./routes";
@@ -14,25 +14,8 @@ const __dirname = path.dirname(__filename);
 
 const app: Express = express();
 
-app.use(
-  pinoHttp({
-    logger,
-    serializers: {
-      req(req: { id: string; method: string; url: string }) {
-        return {
-          id: req.id,
-          method: req.method,
-          url: req.url?.split("?")[0],
-        };
-      },
-      res(res: { statusCode: number }) {
-        return {
-          statusCode: res.statusCode,
-        };
-      },
-    },
-  }),
-);
+// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+app.use(pinoHttp({ logger }));
 
 app.use(cors({
   origin: true,
