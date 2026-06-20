@@ -27,7 +27,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 font-medium text-sm mb-8">
               <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-              11 Hours • Jan 15, 2026
+              11 Hours • July 19, 2026
             </div>
             
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-gray-900 mb-6 leading-tight">
